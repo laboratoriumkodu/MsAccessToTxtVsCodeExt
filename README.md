@@ -1,13 +1,15 @@
 # Access Source Exporter
 
-This VS Code extension will provide a command to export source files from
-Microsoft Access databases by invoking the existing PowerShell exporter.
-The standalone script remains at `../script/Export-AccessSource.ps1`.
+Use **Access: Export Source** from the Command Palette to select an Access
+database and an output folder. The extension invokes the existing PowerShell
+exporter; the standalone script remains at
+`../script/Export-AccessSource.ps1`.
 
 ## Current status
 
-The extension scaffold and **Access: Export Source** command are in place.
-The export workflow is not implemented yet.
+The command flow is implemented. The build copies the exporter into the
+extension so the installed extension does not depend on the repository being
+present.
 
 ## Requirements
 

@@ -1,4 +1,6 @@
 const esbuild = require("esbuild");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -24,6 +26,14 @@ const esbuildProblemMatcherPlugin = {
 };
 
 async function main() {
+	const extensionDirectory = __dirname;
+	const outputDirectory = path.join(extensionDirectory, 'dist');
+	fs.mkdirSync(outputDirectory, { recursive: true });
+	fs.copyFileSync(
+		path.join(extensionDirectory, '..', 'script', 'Export-AccessSource.ps1'),
+		path.join(outputDirectory, 'Export-AccessSource.ps1')
+	);
+
 	const ctx = await esbuild.context({
 		entryPoints: [
 			'src/extension.ts'
