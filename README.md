@@ -9,12 +9,15 @@ exporter; the standalone script remains at
 
 The command flow is implemented. The build copies the exporter into the
 extension so the installed extension does not depend on the repository being
-present.
+present. Export progress can be cancelled, and PowerShell output and errors
+appear in the **Access Source Export** Output channel.
 
 ## Requirements
 
-The completed extension is intended for Windows with PowerShell and Microsoft
-Access installed. The exporter uses Access COM automation.
+The extension requires Windows, Windows PowerShell 5.1 (`powershell.exe`), and
+Microsoft Access installed and activated. The exporter uses Access COM
+automation and its process architecture must be compatible with the Access
+installation.
 
 ## Development
 
