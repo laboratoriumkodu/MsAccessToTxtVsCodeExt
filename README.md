@@ -21,6 +21,10 @@ installation.
 
 ## Development
 
-Open this folder in VS Code and run the `Run Extension` launch configuration to
-start an Extension Development Host. Run `npm run compile` to build and check
-the extension.
+Open this folder in VS Code and start the `Run Extension` launch configuration
+to build the extension and open an Extension Development Host. The launch task
+runs `npm run compile` before each start. Use the **Access: Export Source**
+command in the host window to try the extension.
+
+Run `npm test` separately to execute the extension tests; the test runner opens
+and closes its own temporary VS Code instance.
