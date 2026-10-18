@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import { spawn } from 'node:child_process';
 
-function buildPowerShellArguments(
+type SpawnLike = (...args: any[]) => ReturnType<typeof spawn>;
+
+export function buildPowerShellArguments(
 	scriptPath: string,
 	databasePath: string,
 	outputPath: string
@@ -19,7 +21,7 @@ function buildPowerShellArguments(
 	];
 }
 
-async function selectDatabase(): Promise<vscode.Uri | undefined> {
+export async function selectDatabase(): Promise<vscode.Uri | undefined> {
 	const selections = await vscode.window.showOpenDialog({
 		canSelectFiles: true,
 		canSelectFolders: false,
@@ -33,7 +35,7 @@ async function selectDatabase(): Promise<vscode.Uri | undefined> {
 	return selections?.[0];
 }
 
-async function selectOutputFolder(): Promise<vscode.Uri | undefined> {
+export async function selectOutputFolder(): Promise<vscode.Uri | undefined> {
 	const selections = await vscode.window.showOpenDialog({
 		canSelectFiles: false,
 		canSelectFolders: true,
@@ -46,12 +48,13 @@ async function selectOutputFolder(): Promise<vscode.Uri | undefined> {
 
 type ExportResult = 'completed' | 'cancelled';
 
-function runExporter(
+export function runExporter(
 	scriptPath: string,
 	databasePath: string,
 	outputPath: string,
 	token: vscode.CancellationToken,
-	output: vscode.OutputChannel
+	output: vscode.OutputChannel,
+	spawnFn: SpawnLike = spawn
 ): Promise<ExportResult> {
 	return new Promise((resolve, reject) => {
 		if (token.isCancellationRequested) {
@@ -59,11 +62,15 @@ function runExporter(
 			return;
 		}
 
-		const child = spawn(
+		const child = spawnFn(
 			'powershell.exe',
 			buildPowerShellArguments(scriptPath, databasePath, outputPath),
 			{ windowsHide: true }
 		);
+		if (!child.stdout || !child.stderr) {
+			reject(new Error('PowerShell process failed to start and no output streams were available.'));
+			return;
+		}
 
 		let settled = false;
 		let stderr = '';
@@ -102,7 +109,7 @@ function runExporter(
 			}
 			rejectOnce(error);
 		});
-		child.once('close', (code, signal) => {
+		child.once('close', (code: number | null, signal: NodeJS.Signals | null) => {
 			if (settled) {
 				return;
 			}
@@ -127,7 +134,7 @@ function runExporter(
 	});
 }
 
-function getActionableError(error: unknown): string {
+export function getActionableError(error: unknown): string {
 	const message = error instanceof Error ? error.message : String(error);
 	if (/COMException|COM class factory|Access\.Application|class factory|class not registered|0x80040154|OpenCurrentDatabase/i.test(message)) {
 		return `Microsoft Access could not be opened or automated. Confirm that Access is installed and activated, and that its installation matches the PowerShell process architecture. Details: ${message}`;
@@ -135,9 +142,10 @@ function getActionableError(error: unknown): string {
 	return message;
 }
 
-async function exportSource(
+export async function exportSource(
 	context: vscode.ExtensionContext,
-	output: vscode.OutputChannel
+	output: vscode.OutputChannel,
+	spawnFn: SpawnLike = spawn
 ): Promise<void> {
 	if (process.platform !== 'win32') {
 		output.appendLine('Export failed: unsupported operating system.');
@@ -183,7 +191,8 @@ async function exportSource(
 					database.fsPath,
 					outputFolder.fsPath,
 					token,
-					output
+					output,
+					spawnFn
 				);
 
 				if (result === 'cancelled') {
