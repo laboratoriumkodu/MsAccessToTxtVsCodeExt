@@ -1,5 +1,10 @@
 import * as vscode from 'vscode';
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
+import { open } from 'node:fs/promises';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 type SpawnLike = (...args: any[]) => ReturnType<typeof spawn>;
 
@@ -46,6 +51,56 @@ export async function selectOutputFolder(): Promise<vscode.Uri | undefined> {
 	return selections?.[0];
 }
 
+async function queryRegistryDefault(key: string, view: '/reg:32' | '/reg:64'): Promise<string | undefined> {
+	try {
+		const { stdout } = await execFileAsync('reg.exe', ['query', key, '/ve', view], { windowsHide: true });
+		const value = /REG_(?:EXPAND_)?SZ\s+(.+)/.exec(stdout)?.[1].trim();
+		return value && !/^\(value not set\)$/i.test(value) ? value : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+async function getAccessExecutablePath(): Promise<string | undefined> {
+	// Click-to-Run registers 32-bit Access only in the 32-bit registry view.
+	for (const view of ['/reg:64', '/reg:32'] as const) {
+		const clsid = await queryRegistryDefault('HKCR\\Access.Application\\CLSID', view);
+		const server = clsid && await queryRegistryDefault(`HKCR\\CLSID\\${clsid}\\LocalServer32`, view);
+		const exe = server ? /^"?(.+?\.exe)/i.exec(server)?.[1] : undefined;
+		if (exe) {
+			return exe;
+		}
+	}
+	return undefined;
+}
+
+async function isPe32Executable(filePath: string): Promise<boolean> {
+	const file = await open(filePath, 'r');
+	try {
+		const header = Buffer.alloc(4);
+		await file.read(header, 0, 4, 0x3c);
+		const machine = Buffer.alloc(2);
+		await file.read(machine, 0, 2, header.readUInt32LE(0) + 4);
+		return machine.readUInt16LE(0) === 0x014c;
+	} finally {
+		await file.close();
+	}
+}
+
+// DAO objects (e.g. CurrentDb) only marshal when PowerShell matches Access bitness.
+export async function resolvePowerShellPath(): Promise<string> {
+	const systemRoot = process.env.SystemRoot ?? 'C:\\Windows';
+	try {
+		const accessPath = await getAccessExecutablePath();
+		if (accessPath && process.arch !== 'ia32' && await isPe32Executable(accessPath)) {
+			return path.join(systemRoot, 'SysWOW64', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+		}
+	} catch {
+		// Fall back to the default PowerShell when Access bitness cannot be determined.
+	}
+	return 'powershell.exe';
+}
+
 type ExportResult = 'completed' | 'cancelled';
 
 export function runExporter(
@@ -54,7 +109,8 @@ export function runExporter(
 	outputPath: string,
 	token: vscode.CancellationToken,
 	output: vscode.OutputChannel,
-	spawnFn: SpawnLike = spawn
+	spawnFn: SpawnLike = spawn,
+	powerShellPath = 'powershell.exe'
 ): Promise<ExportResult> {
 	return new Promise((resolve, reject) => {
 		if (token.isCancellationRequested) {
@@ -63,7 +119,7 @@ export function runExporter(
 		}
 
 		const child = spawnFn(
-			'powershell.exe',
+			powerShellPath,
 			buildPowerShellArguments(scriptPath, databasePath, outputPath),
 			{ windowsHide: true }
 		);
@@ -172,6 +228,7 @@ export async function exportSource(
 			'dist',
 			'Export-AccessSource.ps1'
 		).fsPath;
+		const powerShellPath = await resolvePowerShellPath();
 
 		await vscode.window.withProgress(
 			{
@@ -183,6 +240,7 @@ export async function exportSource(
 				output.clear();
 				output.appendLine(`Database: ${database.fsPath}`);
 				output.appendLine(`Output folder: ${outputFolder.fsPath}`);
+				output.appendLine(`PowerShell: ${powerShellPath}`);
 				output.show(true);
 
 				progress.report({ message: 'Running PowerShell exporter...' });
@@ -192,7 +250,8 @@ export async function exportSource(
 					outputFolder.fsPath,
 					token,
 					output,
-					spawnFn
+					spawnFn,
+					powerShellPath
 				);
 
 				if (result === 'cancelled') {
