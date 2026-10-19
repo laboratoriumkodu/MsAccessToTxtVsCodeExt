@@ -5,4 +5,3 @@ node_modules
 *.vsix
 
 .fake
-package-lock.json
