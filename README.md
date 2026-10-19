@@ -2,15 +2,16 @@
 
 Use **Access: Export Source** from the Command Palette to select an Access
 database and an output folder. The extension invokes the existing PowerShell
-exporter; the standalone script remains at
-`../script/Export-AccessSource.ps1`.
+exporter. Its copy in `script/` is included in this project, so the extension
+can be built and packaged independently of the standalone exporter in the
+parent repository.
 
 ## Current status
 
-The command flow is implemented. The build copies the exporter into the
-extension so the installed extension does not depend on the repository being
-present. Export progress can be cancelled, and PowerShell output and errors
-appear in the **Access Source Export** Output channel.
+The command flow is implemented. The build copies the bundled exporter into
+the extension package, so an installed extension does not depend on the
+repository being present. Export progress can be cancelled, and PowerShell
+output and errors appear in the **Access Source Export** Output channel.
 
 ## Requirements
 

@@ -1,4 +1,8 @@
 {
+  "publisher": "LaboratoriumKodu",
+  "repository": "https://github.com/laboratoriumkodu/MsAccessToTxtVsCodeExt",
+  "license":"Apache-2.0",
+  "icon": "images/icon.png",
   "name": "msaccesstotxt",
   "displayName": "Access Source Exporter",
   "description": "Export Microsoft Access source files from VS Code.",
@@ -7,7 +11,7 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Other", "MsAccess", "Export"
   ],
   "activationEvents": [
     "onCommand:msaccesstotxt.exportSource"

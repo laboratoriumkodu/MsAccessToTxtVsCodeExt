@@ -30,7 +30,7 @@ async function main() {
 	const outputDirectory = path.join(extensionDirectory, 'dist');
 	fs.mkdirSync(outputDirectory, { recursive: true });
 	fs.copyFileSync(
-		path.join(extensionDirectory, '..', 'script', 'Export-AccessSource.ps1'),
+		path.join(extensionDirectory, 'script', 'Export-AccessSource.ps1'),
 		path.join(outputDirectory, 'Export-AccessSource.ps1')
 	);
 
