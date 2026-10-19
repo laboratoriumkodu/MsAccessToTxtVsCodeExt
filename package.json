@@ -1,17 +1,18 @@
 {
   "publisher": "LaboratoriumKodu",
   "repository": "https://github.com/laboratoriumkodu/MsAccessToTxtVsCodeExt",
-  "license":"Apache-2.0",
+  "license": "Apache-2.0",
   "icon": "images/icon.png",
-  "name": "msaccesstotxt",
-  "displayName": "Access Source Exporter",
+  "name": "msaccesssourcetotxt",
+  "displayName": "MS Access Source Exporter",
   "description": "Export Microsoft Access source files from VS Code.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other", "MsAccess", "Export"
+    "Other",
+    "Programming Languages"
   ],
   "activationEvents": [
     "onCommand:msaccesstotxt.exportSource"
@@ -40,16 +41,17 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
-    "typescript-eslint": "^8.61.1",
-    "eslint": "^10.5.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
+    "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.1",
+    "eslint": "^10.5.0",
     "npm-run-all": "^4.1.5",
     "typescript": "^6.0.3",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0"
+    "typescript-eslint": "^8.61.1"
   },
   "overrides": {
     "diff": "^8.0.4",
